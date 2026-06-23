@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PoC SGDEA · Validación de Requerimientos Funcionales</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Montserrat:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* LinkTIC Control Panel — TEMA OSCURO (azul noche) · jerarquía: naranja primario / azul secundario */
+  --bg:#2C3F53; --bg2:#263646; --panel:#35495F; --panel2:#3E5469;
+  --line:#3C5269; --line2:#4C657E;
+  --txt:#F0F4F9; --txt2:#DCE4EE; --mut:#A6B4C4; --mut2:#7E8EA0;
+  --acc:#3B9CFF; --acc2:#FF7A45; --grad:linear-gradient(135deg,#0A84FF,#64D2FF);
+  --ok:#30D158; --ok-bg:rgba(48,209,88,.18);
+  --no:#FF6B61; --no-bg:rgba(255,69,58,.18);
+  --warn:#FFD60A;
+  /* superficies semánticas (cambian con el tema) */
+  --card:rgba(45,63,84,.62);            /* glass de las tarjetas */
+  --chrome:rgba(38,54,72,.82);          /* barras flotantes (nav, botones) */
+  --soft:rgba(255,255,255,.05);         /* hover suave */
+  --soft2:rgba(255,255,255,.03);        /* hover muy suave (filas) */
+  --soft-strong:rgba(255,255,255,.12);  /* hover marcado (botones nav) */
+  --track:rgba(255,255,255,.08);        /* fondo de barras de progreso */
+  --shadow-sm:0 .5px 1px rgba(0,0,0,.30),0 1px 3px rgba(0,0,0,.40);
+  --shadow:0 1px 2px rgba(0,0,0,.30),0 4px 8px rgba(0,0,0,.40),0 8px 16px rgba(0,0,0,.45);
+  --r:16px;
+  /* esferas decorativas marca LinkTIC — TEMA OSCURO (azul intenso) */
+  --sph-deep:#0E2A52;          /* esfera oscura (navy) */
+  --sph-deep2:#13386E;
+  --sph-bright:#1E6BE0;        /* esfera brillante (azul marca) */
+  --sph-bright2:#3B9CFF;
+  --sph-opacity:.9;
+}
+/* ===== TEMA CLARO (azul claro) ===== */
+[data-theme="light"]{
+  --bg:#EDF0FF; --bg2:#F6F8FF; --panel:#FFFFFF; --panel2:#EDF1FC;
+  --line:#D7DDF2; --line2:#C3CCE8;
+  --txt:#16203A; --txt2:#2C3F53; --mut:#566480; --mut2:#8492A8;
+  --acc:#0A63DC; --acc2:#DD5A1E; --grad:linear-gradient(135deg,#0A63DC,#2E8FE0);
+  --ok:#1F9E45; --ok-bg:rgba(31,158,69,.14);
+  --no:#D8362B; --no-bg:rgba(216,54,43,.12);
+  --warn:#B7791F;
+  --card:rgba(255,255,255,.78);
+  --chrome:rgba(255,255,255,.85);
+  --soft:rgba(22,40,80,.045);
+  --soft2:rgba(22,40,80,.028);
+  --soft-strong:rgba(22,40,80,.08);
+  --track:rgba(22,40,80,.10);
+  --shadow-sm:0 .5px 1px rgba(31,45,73,.06),0 1px 3px rgba(31,45,73,.10);
+  --shadow:0 1px 2px rgba(31,45,73,.06),0 6px 14px rgba(31,45,73,.10),0 12px 28px rgba(31,45,73,.12);
+  /* esferas decorativas marca LinkTIC — TEMA CLARO (azul suave, baja saturación) */
+  --sph-deep:#C5D4EC;          /* esfera "oscura" suavizada */
+  --sph-deep2:#AEC4E6;
+  --sph-bright:#9DBDEC;        /* esfera brillante suavizada */
+  --sph-bright2:#C2D6F5;
+  --sph-opacity:.5;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--txt);
+  overflow:hidden;-webkit-font-smoothing:antialiased;
+  transition:background .4s ease,color .4s ease;
+}
+body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(1100px 800px at 8% -10%,rgba(255,106,51,.12),transparent 55%),
+    radial-gradient(1000px 800px at 100% 0%,rgba(10,132,255,.12),transparent 52%);
+}
+body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(450px 450px at 5% 15%,rgba(59,156,255,.25),transparent 65%),
+    radial-gradient(380px 380px at 92% 8%,rgba(59,156,255,.28),transparent 60%),
+    radial-gradient(420px 420px at 88% 85%,rgba(59,156,255,.22),transparent 62%);
+  opacity:0.7;
+}
+/* tema claro: fondo azul uniforme, sin glows */
+[data-theme="light"] body::before{background:none}
+[data-theme="light"] body::after{
+  background:
+    radial-gradient(450px 450px at 5% 15%,rgba(10,99,220,.14),transparent 65%),
+    radial-gradient(380px 380px at 92% 8%,rgba(10,99,220,.16),transparent 60%),
+    radial-gradient(420px 420px at 88% 85%,rgba(10,99,220,.12),transparent 62%);
+  opacity:0.6;
+}
+/* ===== ESFERAS DECORATIVAS (marca LinkTIC) ===== */
+.spheres{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;
+  opacity:var(--sph-opacity);transition:opacity .4s ease}
+.sph{position:absolute;border-radius:50%;
+  transition:background .4s ease;will-change:transform}
+/* esfera navy — esquina superior derecha */
+.sph.sph-tr{width:46vmax;height:46vmax;top:-20vmax;right:-16vmax;
+  background:radial-gradient(circle at 35% 30%,var(--sph-deep2),var(--sph-deep) 70%,transparent 72%);
+  animation:sphFloatA 16s ease-in-out infinite alternate}
+/* esfera azul brillante — esquina inferior izquierda */
+.sph.sph-bl{width:28vmax;height:28vmax;bottom:-12vmax;left:-10vmax;
+  background:radial-gradient(circle at 65% 35%,var(--sph-bright2),var(--sph-bright) 68%,transparent 70%);
+  animation:sphFloatB 20s ease-in-out infinite alternate}
+@keyframes sphFloatA{
+  0%{transform:translate(0,0) scale(1)}
+  100%{transform:translate(-3vmax,3vmax) scale(1.05)}
+}
+@keyframes sphFloatB{
+  0%{transform:translate(0,0) scale(1)}
+  100%{transform:translate(3vmax,-3vmax) scale(1.06)}
+}
+@media(prefers-reduced-motion:reduce){.sph{animation:none!important}}
+.deck{position:relative;z-index:1;height:100vh;width:100vw;overflow:hidden}
+
+/* ---------- SLIDES ---------- */
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;
+  padding:clamp(28px,5vw,80px);opacity:0;visibility:hidden;
+  transform:translateY(24px) scale(.985);
+  transition:opacity .55s cubic-bezier(.22,1,.36,1),transform .55s cubic-bezier(.22,1,.36,1);
+  overflow:auto;}
+.slide.active{opacity:1;visibility:visible;transform:none}
+.slide::-webkit-scrollbar{width:9px}
+.slide::-webkit-scrollbar-thumb{background:var(--line2);border-radius:10px}
+
+.kicker{display:inline-flex;align-items:center;gap:9px;font-size:12.5px;font-weight:600;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--acc2);margin-bottom:18px}
+.kicker::before{content:"";width:26px;height:2px;background:var(--grad);border-radius:2px}
+h1{font-family:'Montserrat',sans-serif;font-weight:800;line-height:1.04;letter-spacing:-.02em}
+h2{font-family:'Montserrat',sans-serif;font-weight:700;line-height:1.08;letter-spacing:-.015em}
+.eyebrow{font-family:'Montserrat',sans-serif}
+
+/* ---------- COVER ---------- */
+#s-cover{justify-content:center;overflow:hidden;padding-bottom:120px}
+.cover-wrap{max-width:none;width:100%}
+.cover-logos{display:flex;align-items:center;gap:26px;margin-bottom:34px}
+.cover-logos img{height:46px;width:auto;display:block}
+.cover-logos .logo-div{width:1px;height:36px;background:var(--line2)}
+.cover-kpis{margin-top:48px;grid-template-columns:repeat(2,1fr);max-width:1100px}
+.cover-badge{display:inline-flex;align-items:center;gap:10px;padding:8px 16px;border:1px solid var(--line2);
+  border-radius:100px;background:var(--soft);font-size:13px;font-weight:600;color:var(--mut);margin-bottom:30px}
+.cover-badge .dot{width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 4px var(--ok-bg)}
+#s-cover h1{font-size:clamp(34px,5vw,68px);margin-bottom:26px}
+#s-cover h1 .g{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.cover-sub{font-size:clamp(17px,1.9vw,25px);color:var(--txt2);max-width:none;line-height:1.5;font-weight:400}
+.cover-meta{display:flex;gap:38px;flex-wrap:wrap;margin-top:46px;padding-top:30px;border-top:1px solid var(--line)}
+.cover-meta .m .k{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);margin-bottom:6px}
+.cover-meta .m .v{font-family:'Montserrat',sans-serif;font-size:20px;font-weight:700}
+.cover-hint{position:absolute;bottom:34px;left:50%;transform:translateX(-50%);font-size:13px;color:var(--mut2);
+  display:flex;align-items:center;gap:10px}
+.cover-hint kbd{font-family:inherit;border:1px solid var(--line2);border-radius:6px;padding:3px 9px;font-size:12px;background:var(--soft)}
+
+/* ---------- HEADERS ---------- */
+.s-head{margin-bottom:30px}
+.back-btn{font-family:'Inter',sans-serif;font-size:13.5px;font-weight:600;color:var(--acc);cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px;margin-bottom:16px;padding:8px 14px;border-radius:100px;
+  background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow-sm);transition:.18s}
+.back-btn:hover{background:rgba(0,122,255,.08);border-color:var(--acc);box-shadow:var(--shadow);transform:translateX(-2px)}
+.s-head h2{font-size:clamp(26px,3.4vw,44px)}
+.s-head .desc{color:var(--mut);font-size:16px;margin-top:12px;max-width:880px;line-height:1.55}
+.s-head .desc.desc-1{max-width:none;white-space:nowrap}
+
+/* ---------- KPI CARDS ---------- */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.kpis.kpis-3{grid-template-columns:repeat(3,1fr)}
+.kpi{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);
+  border-radius:var(--r);padding:26px;position:relative;overflow:hidden}
+.kpi::after{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--grad);opacity:.8}
+.kpi .num{font-family:'Montserrat',sans-serif;font-size:clamp(34px,4.4vw,52px);font-weight:800;line-height:1;letter-spacing:-.03em}
+.kpi .lbl{color:var(--mut);font-size:14px;margin-top:12px;font-weight:500}
+.kpi .sub{color:var(--mut2);font-size:12.5px;margin-top:5px}
+.kpi.ok .num{color:var(--ok)} .kpi.no .num{color:var(--no)}
+.kpi.acc .num{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+.ring-row{display:grid;grid-template-columns:auto 1fr;gap:40px;align-items:center;margin-top:34px;
+  background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:var(--r);padding:34px 40px}
+.ring{position:relative;width:190px;height:190px;flex:none}
+.ring svg{transform:rotate(-90deg)}
+.ring .c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring .c .p{font-family:'Montserrat',sans-serif;font-size:33px;font-weight:800;line-height:1}
+.ring .c .t{font-size:12px;color:var(--mut);letter-spacing:.08em;text-transform:uppercase}
+.ring-txt h3{font-family:'Montserrat',sans-serif;font-size:22px;margin-bottom:10px}
+.ring-txt p{color:var(--mut);line-height:1.6;font-size:15px;max-width:620px}
+.legend{display:flex;gap:24px;margin-top:18px;flex-wrap:wrap}
+.legend span{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--mut)}
+.legend i{width:12px;height:12px;border-radius:3px;display:inline-block}
+
+/* ---------- OVERVIEW BARS ---------- */
+.bars{display:flex;flex-direction:column;gap:13px;margin-top:6px}
+.bar-row{display:grid;grid-template-columns:230px 1fr 110px;align-items:center;gap:18px;
+  cursor:pointer;padding:7px 10px;border-radius:12px;transition:background .2s;border:1px solid transparent}
+.bar-row:hover{background:var(--soft);border-color:var(--line)}
+.bar-row .name{font-size:14px;font-weight:500;display:flex;align-items:center;gap:9px;min-width:0}
+.bar-row .name .tag{font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;color:var(--acc2);
+  background:rgba(255,78,0,.1);border:1px solid rgba(255,78,0,.22);padding:2px 7px;border-radius:6px;flex:none}
+.bar-row .name .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--txt)}
+.track{height:14px;background:var(--track);border-radius:8px;overflow:hidden;position:relative}
+.fill{height:100%;border-radius:8px;background:var(--grad);width:0;transition:width 1s cubic-bezier(.22,1,.36,1)}
+.fill.warn{background:linear-gradient(135deg,#fbbf24,#fb7185)}
+.bar-row .val{text-align:right;font-family:'Montserrat',sans-serif;font-weight:700;font-size:15px}
+.bar-row .val small{display:block;font-family:'Inter';font-weight:400;font-size:11.5px;color:var(--mut2)}
+
+/* ---------- OVERVIEW CARDS ---------- */
+/* el slide hereda overflow:auto de .slide → scroll sólo si el contenido no cabe */
+.el-cards{display:grid;grid-template-columns:repeat(4,1fr);
+  grid-auto-rows:minmax(130px,auto);gap:14px;margin-top:8px}
+.el-card{position:relative;overflow:hidden;display:flex;flex-direction:column;cursor:pointer;
+  background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);
+  border-radius:var(--r);padding:14px 16px;transition:transform .2s,border-color .2s,box-shadow .2s}
+.el-card::after{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--grad);opacity:.65;transition:opacity .2s}
+.el-card:hover{transform:translateY(-4px);border-color:var(--acc);box-shadow:var(--shadow)}
+.el-card:hover::after{opacity:1}
+.ec-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.ec-top .tag{font-family:'Montserrat',sans-serif;font-size:11.5px;font-weight:700;color:var(--acc2);
+  background:rgba(255,78,0,.1);border:1px solid rgba(255,78,0,.22);padding:3px 8px;border-radius:7px}
+.ec-req{font-family:'Montserrat',sans-serif;font-weight:800;font-size:clamp(20px,2.1vw,30px);line-height:1;
+  background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.ec-name{font-weight:600;font-size:clamp(11.5px,1.05vw,13.5px);line-height:1.25;color:var(--txt);margin-top:9px;flex:1;
+  display:flex;align-items:flex-start;overflow-wrap:break-word;hyphens:none}
+.ec-bar{height:7px;background:var(--track);border-radius:6px;overflow:hidden;margin-top:9px;flex:none}
+.ec-bar-fill{height:100%;border-radius:6px;background:var(--grad);width:0;transition:width .5s cubic-bezier(.22,1,.36,1)}
+.ec-prog{font-size:11.5px;color:var(--mut);margin-top:6px;flex:none}
+.ec-prog b{color:var(--acc2);font-family:'Montserrat',sans-serif}
+
+/* ---------- ELEMENT DETAIL SLIDE ---------- */
+.el-grid{display:grid;grid-template-columns:1.35fr 1fr;gap:30px;flex:1;min-height:0}
+.el-text{display:flex;flex-direction:column;gap:16px;min-height:0}
+.el-resumen{color:var(--mut);line-height:1.7;font-size:16px;background:linear-gradient(180deg,var(--panel),var(--bg2));
+  border:1px solid var(--line);border-left:3px solid var(--acc);border-radius:var(--r);padding:26px 28px;flex:1;overflow:auto}
+.req-block{margin-top:0;background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:var(--r);padding:18px 22px;flex:1;min-height:0;display:flex;flex-direction:column}
+.req-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:13px;font-size:13.5px;color:var(--mut);flex-wrap:wrap}
+.req-head strong{color:var(--txt);font-family:'Montserrat',sans-serif}
+.req-leg{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--no)}
+.req-leg i{width:9px;height:9px;border-radius:3px;background:var(--no);display:inline-block}
+.req-leg.ok{color:var(--ok)}
+.req-bar{margin-bottom:14px;flex:none}
+.req-chips{display:flex;flex-wrap:wrap;align-content:flex-start;gap:7px;flex:1;min-height:0;max-height:none;overflow:auto}
+.req{font-family:'Montserrat',sans-serif;font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:7px;
+  background:rgba(255,78,0,.1);border:1px solid rgba(255,78,0,.22);color:var(--acc2);white-space:nowrap;
+  cursor:pointer;transition:.15s;user-select:none;display:inline-flex;align-items:center;gap:6px}
+.req:hover{background:rgba(255,78,0,.16);border-color:var(--acc);color:var(--acc);transform:translateY(-1px)}
+.req .req-check{width:14px;height:14px;border:1.5px solid var(--line2);border-radius:4px;flex:none;
+  display:inline-grid;place-items:center;transition:.15s;cursor:pointer}
+.req .req-check::after{content:"✓";font-size:9px;font-weight:900;color:#FFFFFF;opacity:0;transition:.15s}
+.req .req-check:hover{border-color:var(--acc2)}
+.req .req-lbl{cursor:pointer}
+.req.active{box-shadow:0 0 0 2px var(--acc2)}
+.req.checked{background:var(--ok-bg);border-color:rgba(52,199,89,.45);color:var(--ok)}
+.req.checked .req-check{background:var(--ok);border-color:var(--ok)}
+.req.checked .req-check::after{opacity:1}
+.req.no{background:var(--no-bg);border-color:rgba(230,0,3,.3);color:var(--no)}
+.req-count{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--mut)}
+.req-count b{color:var(--ok);font-family:'Montserrat',sans-serif;font-size:14px}
+
+.req-detail{flex:1;display:flex;flex-direction:column;background:linear-gradient(180deg,var(--panel),var(--bg2));
+  border:1px solid var(--line);border-left:3px solid var(--acc2);border-radius:var(--r);padding:20px 24px;min-height:0;overflow:auto}
+.rd-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.rd-id{font-family:'Montserrat',sans-serif;font-weight:700;font-size:13px;color:var(--acc2);
+  background:rgba(255,78,0,.1);border:1px solid rgba(255,78,0,.22);padding:4px 11px;border-radius:7px}
+.rd-q{color:var(--txt);line-height:1.65;font-size:18px}
+.rd-q.rd-empty{color:var(--mut2);font-size:18px}
+.rd-obs{margin-top:14px;padding-top:14px;border-top:1px solid var(--line);font-size:13.5px;color:var(--mut);line-height:1.55}
+.rd-obs b{color:var(--warn);font-weight:600}
+.el-stats{display:flex;flex-direction:column;gap:16px;min-height:0}
+.stat{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:var(--r);
+  padding:20px 24px;display:flex;align-items:center;justify-content:space-between}
+.stat .l{color:var(--mut);font-size:14px;font-weight:500}
+.stat .n{font-family:'Montserrat',sans-serif;font-size:30px;font-weight:800}
+.stat.ok .n{color:var(--ok)} .stat.no .n{color:var(--no)} .stat.tot .n{color:var(--txt)}
+.stat.pct{background:var(--grad);border:none}
+.stat.pct .l,.stat.pct .n{color:#FFFFFF}
+.mini-track{height:10px;background:var(--track);border-radius:6px;overflow:hidden;margin-top:14px}
+.mini-fill{height:100%;background:var(--grad);border-radius:6px}
+
+/* ---------- NO CUMPLE ---------- */
+.nc-list{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:6px}
+.nc-card{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);
+  border-left:3px solid var(--no);border-radius:14px;padding:18px 20px}
+.nc-card .top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.nc-card .id{font-family:'Montserrat',sans-serif;font-weight:700;font-size:13px;color:var(--no);
+  background:var(--no-bg);padding:3px 9px;border-radius:6px}
+.nc-card .el{font-size:12px;color:var(--mut2)}
+.nc-card .q{font-size:14px;line-height:1.5;color:var(--txt)}
+.nc-card .obs{font-size:12.5px;color:var(--warn);margin-top:10px;display:flex;gap:7px}
+.nc-card .obs::before{content:"▸";color:var(--warn)}
+
+/* ---------- DETAIL TABLE ---------- */
+.tbl-tools{display:flex;gap:14px;margin-bottom:18px;flex-wrap:wrap;align-items:center}
+.tbl-tools input,.tbl-tools select{font-family:inherit;font-size:14px;color:var(--txt);
+  background:var(--panel);border:1px solid var(--line2);border-radius:10px;padding:11px 15px;outline:none}
+.tbl-tools input{flex:1;min-width:220px}
+.tbl-tools input:focus,.tbl-tools select:focus{border-color:var(--acc)}
+.tbl-tools .count{margin-left:auto;color:var(--mut2);font-size:13px}
+.tbl-wrap{flex:1;overflow:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--bg2)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+thead th{position:sticky;top:0;background:var(--panel2);text-align:left;padding:13px 16px;font-weight:600;
+  color:var(--mut);font-size:12px;letter-spacing:.04em;text-transform:uppercase;border-bottom:1px solid var(--line2);z-index:2}
+tbody td{padding:12px 16px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.45}
+tbody tr:hover{background:var(--soft2)}
+td .pill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;padding:3px 10px;border-radius:100px;white-space:nowrap}
+td .pill.ok{background:var(--ok-bg);color:var(--ok)} td .pill.no{background:var(--no-bg);color:var(--no)}
+td.id{font-family:'Montserrat';font-weight:700;color:var(--acc2);white-space:nowrap}
+td.el{color:var(--mut);font-size:12.5px}
+td.obs{color:var(--warn);font-size:12.5px;max-width:240px}
+
+/* ---------- CLOSING ---------- */
+#s-end{justify-content:center;align-items:flex-start}
+#s-end h2{font-size:clamp(28px,4vw,52px);margin-bottom:24px}
+#s-end h2 .g{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.end-pts{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:14px;max-width:1000px}
+.end-pt{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:var(--r);padding:24px}
+.end-pt .n{font-family:'Montserrat';font-size:30px;font-weight:800;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.end-pt .t{color:var(--mut);font-size:14px;margin-top:8px;line-height:1.5}
+
+/* ---------- NAV / CHROME ---------- */
+.topbar{position:fixed;top:0;left:0;right:0;height:54px;display:flex;align-items:center;
+  padding:0 26px;gap:14px;z-index:50;pointer-events:none}
+.brand{display:flex;align-items:center;gap:11px;font-family:'Montserrat';font-weight:700;font-size:14px;letter-spacing:.01em}
+.brand .logo{width:30px;height:30px;border-radius:9px;background:var(--grad);display:grid;place-items:center;
+  font-size:13px;font-weight:800;color:#FFFFFF}
+.progress{position:fixed;top:0;left:0;height:3px;background:var(--grad);z-index:60;transition:width .4s ease}
+
+.nav{position:fixed;right:22px;top:50%;bottom:auto;left:auto;transform:translateY(-50%);z-index:60;
+  display:flex;flex-direction:column;align-items:center;gap:6px;background:var(--chrome);backdrop-filter:blur(14px);
+  border:1px solid var(--line2);border-radius:100px;padding:10px 8px;box-shadow:var(--shadow)}
+.nav button{font-family:inherit;border:none;background:transparent;color:var(--txt);cursor:pointer;
+  width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-size:17px;transition:.18s}
+.nav button#prev{transform:rotate(90deg)}
+.nav button#next{transform:rotate(90deg)}
+.nav button:hover{background:var(--soft-strong)}
+.nav button:disabled{opacity:.3;cursor:default}
+.dots{display:flex;flex-direction:column;gap:7px;padding:8px 0;max-height:46vh;overflow:hidden}
+.dots .d{width:8px;height:8px;border-radius:50%;background:var(--line2);cursor:pointer;transition:.25s;flex:none}
+.dots .d.active{background:var(--grad);height:24px;border-radius:5px}
+.counter{font-family:'Montserrat';font-size:12px;color:var(--mut);padding:6px 0 0;font-weight:600;text-align:center;line-height:1.3}
+
+.sidebar{position:fixed;top:54px;bottom:0;right:0;width:300px;background:var(--bg2);border-left:1px solid var(--line2);
+  z-index:55;transform:translateX(100%);transition:transform .35s cubic-bezier(.22,1,.36,1);overflow:auto;padding:18px 0}
+.sidebar.open{transform:none}
+.sidebar h4{padding:6px 22px 14px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut2)}
+.sidebar a{display:flex;align-items:center;gap:12px;padding:11px 22px;color:var(--mut);text-decoration:none;font-size:13.5px;
+  border-left:2px solid transparent;transition:.15s;cursor:pointer}
+.sidebar a:hover{background:var(--soft);color:var(--txt)}
+.sidebar a.active{color:var(--txt);border-left-color:var(--acc);background:rgba(255,78,0,.08)}
+.sidebar a .ix{font-family:'Montserrat';font-size:11px;color:var(--mut2);width:20px;flex:none}
+.menu-btn{pointer-events:auto;background:var(--chrome);border:1px solid var(--line2);
+  color:var(--txt);width:40px;height:40px;border-radius:11px;cursor:pointer;font-size:17px;backdrop-filter:blur(10px)}
+.theme-btn{pointer-events:auto;margin-left:auto;background:var(--chrome);border:1px solid var(--line2);
+  color:var(--txt);width:40px;height:40px;border-radius:11px;cursor:pointer;display:grid;place-items:center;
+  backdrop-filter:blur(10px);box-shadow:var(--shadow-sm);transition:background .18s,border-color .18s,transform .18s}
+.theme-btn:hover{border-color:var(--acc);transform:translateY(-1px)}
+.theme-btn svg{width:19px;height:19px}
+.theme-btn .ico-sun{display:none}
+.theme-btn .ico-moon{display:block}
+[data-theme="light"] .theme-btn .ico-sun{display:block}
+[data-theme="light"] .theme-btn .ico-moon{display:none}
+
+@media(max-width:860px){
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .nc-list{grid-template-columns:1fr}
+  .ring-row{grid-template-columns:1fr;text-align:center;justify-items:center}
+  .bar-row{grid-template-columns:130px 1fr 76px}
+  .el-cards{grid-template-columns:repeat(2,1fr)}
+  #s-cover{overflow:auto}
+  .end-pts{grid-template-columns:1fr}
+  /* detalle de elemento: apila y deja que cada card crezca a su contenido;
+     el slide hace scroll sólo si no cabe (no se recorta nada internamente) */
+  .el-grid{grid-template-columns:1fr;flex:none}
+  .el-text,.el-stats{min-height:auto}
+  .el-resumen,.req-block,.req-detail{flex:none}
+  .req-chips{max-height:none;overflow:visible}
+}
+@media(max-width:540px){
+  .kpis,.cover-kpis,.el-cards{grid-template-columns:1fr}
+  .bar-row{grid-template-columns:1fr;gap:8px}
+  .bar-row .val{text-align:left}
+}
+
+/* ===== LinkTIC Control Panel · refinamiento Apple HIG + jerarquía de color ===== */
+/* fondo vibrante con glows de color · animación sutil de respiración */
+body::before{animation:bgFloat 18s ease-in-out infinite alternate}
+@keyframes bgFloat{
+  0%{transform:scale(1) translateY(0);filter:saturate(1)}
+  100%{transform:scale(1.06) translateY(-1%);filter:saturate(1.08)}
+}
+
+/* superficies: cards oscuras translúcidas con glassmorphism, borde nítido, sombra en capas */
+.kpi,.el-card,.ring-row,.stat,.req-detail,.req-block,.tbl-wrap,.el-resumen{
+  background:var(--card);backdrop-filter:blur(20px) saturate(1.4);
+  -webkit-backdrop-filter:blur(20px) saturate(1.4);box-shadow:var(--shadow-sm)}
+.kpi:hover,.el-card:hover{box-shadow:var(--shadow)}
+
+/* tags de ítem, chips de REQ, etiquetas e info = AZUL (primario, acento UI) */
+.bar-row .name .tag,.ec-top .tag,.req{
+  color:var(--acc);background:rgba(0,122,255,.10);border-color:rgba(0,122,255,.22)}
+.req:hover{color:var(--acc);background:rgba(0,122,255,.16);border-color:var(--acc)}
+.kicker{color:var(--acc)}
+.rd-id{color:var(--acc);background:rgba(0,122,255,.10);border-color:rgba(0,122,255,.25)}
+.req-detail{border-left-color:var(--acc)}
+.ec-prog b{color:var(--acc)}
+
+/* toques puntuales de NARANJA (secundario, atención) */
+.req.active{box-shadow:0 0 0 2px var(--acc2)}
+.el-resumen{border-left-color:var(--acc2)}
+
+/* chrome flotante estilo HIG (barra translúcida + sombra suave) */
+.nav,.menu-btn{background:var(--chrome)}
+.nav{box-shadow:var(--shadow)}
+
+/* ===== toques llamativos: glow en acentos y números clave ===== */
+#s-cover h1 .g{filter:drop-shadow(0 4px 30px rgba(10,132,255,.45))}
+.kpi.acc .num,.ec-req{filter:drop-shadow(0 2px 16px rgba(10,132,255,.35))}
+.kpi::after,.el-card::after{opacity:1;height:4px;
+  box-shadow:0 0 18px rgba(10,132,255,.55)}
+.cover-badge{background:rgba(48,209,88,.10);border-color:rgba(48,209,88,.30)}
+.kicker::before{box-shadow:0 0 12px rgba(255,106,51,.6)}
+.dots .d.active{box-shadow:0 0 10px rgba(10,132,255,.7)}
+.progress{box-shadow:0 0 14px rgba(10,132,255,.7)}
+
+/* ===== iconos SVG blancos en cards (panorama) e internas (detalle) ===== */
+.ec-top .ec-l{display:flex;align-items:center;gap:9px}
+.ec-icon,.sec-ico,.h2-ico{color:#FFFFFF}
+.ec-icon svg{width:18px;height:18px}
+.sec-ico svg{width:14px;height:14px}
+.h2-ico svg{width:24px;height:24px}
+.ec-icon{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;flex:none;
+  background:linear-gradient(135deg,rgba(10,132,255,.22),rgba(255,106,51,.22));
+  border:1px solid var(--line2);box-shadow:0 0 14px rgba(10,132,255,.25)}
+.el-card:hover .ec-icon{box-shadow:0 0 18px rgba(10,132,255,.5)}
+.sec-ico{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:8px;flex:none;
+  background:linear-gradient(135deg,rgba(10,132,255,.20),rgba(255,106,51,.20));
+  border:1px solid var(--line2);margin-right:9px;vertical-align:middle}
+.h2-ico{display:inline-grid;place-items:center;width:48px;height:48px;border-radius:13px;
+  margin-right:14px;vertical-align:middle;
+  background:linear-gradient(135deg,rgba(10,132,255,.22),rgba(255,106,51,.22));
+  border:1px solid var(--line2);box-shadow:0 0 18px rgba(10,132,255,.30)}
+/* en tema claro las cajas de iconos se saturan para que el icono blanco siga legible */
+[data-theme="light"] .ec-icon,
+[data-theme="light"] .sec-ico,
+[data-theme="light"] .h2-ico{
+  background:linear-gradient(135deg,#0A63DC,#2E8FE0);border-color:transparent}
+.stat .l{display:flex;align-items:center}
+.req-head>span{display:inline-flex;align-items:center;flex-wrap:nowrap}
+.req-head .sec-ico{align-self:center}
+.rh-txt{min-width:0}
+
+/* ===== barra de progreso global (panorama) ===== */
+.gp{margin:4px 0 18px;padding:18px 22px;border-radius:var(--r);
+  background:var(--card);backdrop-filter:blur(20px) saturate(1.4);
+  -webkit-backdrop-filter:blur(20px) saturate(1.4);border:1px solid var(--line);box-shadow:var(--shadow-sm)}
+.gp-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:13px;flex-wrap:wrap}
+.gp-l{display:inline-flex;align-items:center;font-family:'Montserrat',sans-serif;font-weight:700;font-size:15px;color:var(--txt)}
+.gp-v{font-size:14px;color:var(--mut)}
+.gp-v b{font-family:'Montserrat',sans-serif;color:var(--ok);font-size:18px}
+.gp-track{position:relative;height:22px;background:var(--track);border-radius:11px;overflow:hidden}
+.gp-fill{height:100%;border-radius:11px;background:var(--grad);width:0;
+  transition:width .9s cubic-bezier(.22,1,.36,1);box-shadow:0 0 18px rgba(10,132,255,.55)}
+.gp-pct{position:absolute;top:50%;right:12px;transform:translateY(-50%);
+  font-family:'Montserrat',sans-serif;font-weight:700;font-size:12.5px;color:#FFFFFF;
+  text-shadow:0 1px 3px rgba(0,0,0,.6)}
+
+/* ===== SEMÁFORO de progreso (rojo → amarillo → verde) ===== */
+/* aplica a cualquier barra de relleno: cards del panorama, detalle y global */
+.sem-low{background:linear-gradient(135deg,#FF453A,#FF6A33)!important;box-shadow:0 0 14px rgba(255,69,58,.50)}
+.sem-mid{background:linear-gradient(135deg,#FFD60A,#FF9F0A)!important;box-shadow:0 0 14px rgba(255,159,10,.45)}
+.sem-high{background:linear-gradient(135deg,#30D158,#34C759)!important;box-shadow:0 0 16px rgba(48,209,88,.55)}
+
+/* ===== tema claro: quita los halos/brillos azules de las cards ===== */
+[data-theme="light"] .kpi::after,
+[data-theme="light"] .el-card::after{box-shadow:none}
+[data-theme="light"] .kpi.acc .num,
+[data-theme="light"] .ec-req,
+[data-theme="light"] #s-cover h1 .g{filter:none}
+[data-theme="light"] .ec-icon,
+[data-theme="light"] .h2-ico{box-shadow:none}
+[data-theme="light"] .el-card:hover .ec-icon{box-shadow:var(--shadow-sm)}
+</style>
+<script>
+  /* fija el tema antes de pintar para evitar parpadeo */
+  (function(){try{
+    var t=localStorage.getItem('sgdea_theme')||'dark';
+    document.documentElement.setAttribute('data-theme',t);
+  }catch(e){document.documentElement.setAttribute('data-theme','dark');}})();
+</script>
+</head>
+<body>
+
+<div class="spheres" aria-hidden="true">
+  <span class="sph sph-tr"></span>
+  <span class="sph sph-bl"></span>
+</div>
+
+<div class="progress" id="progress"></div>
+<div class="topbar">
+  <button class="theme-btn" id="themeBtn" title="Cambiar tema claro/oscuro (T)" aria-label="Cambiar tema">
+    <svg class="ico-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+    <svg class="ico-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+  </button>
+  <button class="menu-btn" id="menuBtn" title="Índice (M)">☰</button>
+</div>
+
+<nav class="sidebar" id="sidebar">
+  <h4>Contenido</h4>
+  <div id="sbList"></div>
+</nav>
+
+<div class="deck" id="deck"></div>
+
+<div class="nav">
+  <button id="prev" title="Anterior (←)">‹</button>
+  <div class="dots" id="dots"></div>
+  <span class="counter" id="counter">1 / 1</span>
+  <button id="next" title="Siguiente (→)">›</button>
+</div>
+
+<script src="data.js"></script>
+<script>
+const D = window.POC_DATA;
+const R = D.resumen, DET = D.detalle;
+const TOTAL = R.reduce((a,x)=>a+(x.total||0),0);
+const NCUMPLE = R.reduce((a,x)=>a+(x.cumple||0),0);
+const NNO = R.reduce((a,x)=>a+(x.noCumple||0),0);
+const NVAL = R.reduce((a,x)=>a+(x.porValidar||0),0);
+const PCT = (NCUMPLE/TOTAL*100);
+const noCumpleItems = DET.filter(d=>d.cumplimiento!=='Cumple');
+const esc = s => (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+// iconos SVG de línea (blancos) por elemento funcional (ítem 4.x)
+const SVG=p=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const ICONS={
+  '4.1':SVG('<path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>'),
+  '4.2':SVG('<path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.84Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>'),
+  '4.3':SVG('<path d="M12 22h6a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v10"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10.4 12.6a2 2 0 1 1 3 3L8 21l-4 1 1-4Z"/>'),
+  '4.4':SVG('<polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>'),
+  '4.5':SVG('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'),
+  '4.6':SVG('<line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/>'),
+  '4.7':SVG('<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>'),
+  '4.8':SVG('<path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/>'),
+  '4.9':SVG('<path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/>'),
+  '4.10':SVG('<path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>'),
+  '4.11':SVG('<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>'),
+  '4.12':SVG('<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0z"/>')
+};
+const iconOf=it=>ICONS[it]||SVG('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>');
+// iconos de secciones internas
+const IC_RESUMEN=SVG('<rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>');
+const IC_SELECT=SVG('<path d="M14 4.1 12 6"/><path d="m5.1 8-2.9-.8"/><path d="m6 12-1.9 2"/><path d="M7.2 2.2 8 5.1"/><path d="M9.037 9.69a.498.498 0 0 1 .653-.653l11 4.5a.5.5 0 0 1-.074.949l-4.349 1.041a1 1 0 0 0-.74.739l-1.04 4.35a.5.5 0 0 1-.95.074z"/>');
+const IC_STATS=SVG('<line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/>');
+const IC_CHECK=SVG('<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>');
+// muestra el porcentaje con todos sus decimales (sin redondear), limpiando ruido de coma flotante
+const pf = n => (Math.round(n*100*1e8)/1e8).toString();
+
+/* ---------- SEMÁFORO de progreso ---------- */
+// rojo <34% · amarillo 34–66% · verde ≥67%
+const semClass = pct => pct>=67?'sem-high':pct>=34?'sem-mid':'sem-low';
+const applySem = (el,pct) => {if(!el)return;el.classList.remove('sem-low','sem-mid','sem-high');el.classList.add(semClass(pct));};
+
+/* ---------- ESTADO DE CHECKS (persistente) ---------- */
+const CHECK_KEY='sgdea_req_checks';
+let checks={};
+try{checks=JSON.parse(localStorage.getItem(CHECK_KEY)||'{}')||{};}catch(e){checks={};}
+const saveChecks=()=>{try{localStorage.setItem(CHECK_KEY,JSON.stringify(checks));}catch(e){}};
+const totalOf=item=>DET.filter(d=>d.item===item).length;
+const countChecked=item=>DET.filter(d=>d.item===item&&checks[d.itemReq]).length;
+
+/* ---------- BUILD SLIDES ---------- */
+const slides = [];
+
+// 1. PORTADA + RESUMEN (unificadas)
+slides.push({nav:'Portada · Resumen', html:`
+<section class="slide" id="s-cover">
+  <div class="cover-wrap">
+    <div class="cover-logos">
+      <img src="Logo%20Banco%20Agrario%20blanco.png" alt="Banco Agrario">
+      <span class="logo-div"></span>
+      <img src="linktic.svg" alt="LinkTIC">
+    </div>
+    <h1>Validación de <span class="g">Requerimientos Funcionales</span> del SGDEA</h1>
+    <p class="cover-sub">Consolidado ejecutivo de cobertura, validación y trazabilidad de requerimientos funcionales por elemento, Ítem y REQ.</p>
+    <div class="kpis cover-kpis">
+      <div class="kpi acc"><div class="num" data-count="${TOTAL}">0</div><div class="lbl">Requerimientos funcionales evaluados</div><div class="sub">Consolidados y trazados por elemento, Ítem y REQ.</div></div>
+      <div class="kpi acc"><div class="num" data-count="${R.length}">0</div><div class="lbl">Elementos funcionales</div><div class="sub">ítems 4.1 a 4.12</div></div>
+    </div>
+  </div>
+  <div class="cover-hint">Usa <kbd>←</kbd> <kbd>→</kbd> para navegar · <kbd>M</kbd> índice</div>
+</section>`});
+
+// 3. OVERVIEW — N° de requisitos por elemento (cards)
+slides.push({nav:'Requisitos por elemento', html:`
+<section class="slide" id="s-bars">
+  <div class="s-head">
+    <span class="kicker">Panorama comparativo</span>
+    <h2>Requisitos por elemento funcional</h2>
+    <p class="desc desc-1">Cantidad de requerimientos funcionales que agrupa cada uno de los ${R.length} elementos (${TOTAL} en total). Haz clic en cualquier tarjeta para ver su detalle.</p>
+  </div>
+  <div class="gp">
+    <div class="gp-head">
+      <span class="gp-l"><span class="sec-ico">${IC_CHECK}</span>Progreso global de revisión</span>
+      <span class="gp-v"><b id="gpDone">0</b> de ${TOTAL} requerimientos revisados</span>
+    </div>
+    <div class="gp-track"><div class="gp-fill" id="gpFill" style="width:0%"></div><span class="gp-pct" id="gpPct">0%</span></div>
+  </div>
+  <div class="el-cards">
+    ${R.map((r,i)=>{
+      const c=countChecked(r.item);
+      const pct=r.total?c/r.total*100:0;
+      return `
+      <div class="el-card" data-goto="${2+i}">
+        <div class="ec-top"><div class="ec-l"><span class="ec-icon">${iconOf(r.item)}</span><span class="tag">${esc(r.item)}</span></div><span class="ec-req">${r.total}</span></div>
+        <div class="ec-name" title="${esc(r.elemento)}">${esc(r.elemento)}</div>
+        <div class="ec-bar"><div class="ec-bar-fill ${semClass(pct)}" data-item="${esc(r.item)}" style="width:${pct}%"></div></div>
+        <div class="ec-prog" data-item="${esc(r.item)}"><b>${c}</b> de ${r.total} requisitos revisados</div>
+      </div>`;
+    }).join('')}
+  </div>
+</section>`});
+
+// 4..15 ELEMENT DETAIL
+R.forEach((r,i)=>{
+  const dets=DET.filter(d=>d.item===r.item);
+  const c0=countChecked(r.item);
+  const chips=dets.map(d=>`<span class="req ${checks[d.itemReq]?'checked':''}" data-item="${esc(r.item)}" data-n="${esc(String(d.n))}" data-req="${esc(d.itemReq)}"><span class="req-check"></span><span class="req-lbl">REQ ${esc(String(d.n))}</span></span>`).join('');
+  slides.push({nav:`${r.item} · ${r.elemento}`, short:r.item, html:`
+<section class="slide" id="s-el-${i}">
+  <div class="s-head">
+    <button class="back-btn" data-goto="1">‹ Requisitos por elemento</button>
+    <span class="kicker">Elemento ${r.orden} de ${R.length} · Ítem ${esc(r.item)}</span>
+    <h2><span class="h2-ico">${iconOf(r.item)}</span>${esc(r.elemento)}</h2>
+  </div>
+  <div class="el-grid">
+    <div class="el-text">
+      <div class="el-resumen"><span class="sec-ico">${IC_RESUMEN}</span>${esc(r.resumen)}</div>
+      <div class="req-detail">
+        <div class="rd-head"><span class="sec-ico">${IC_SELECT}</span><span class="rd-id">Selecciona un REQ</span></div>
+        <div class="rd-q rd-empty">Haz clic en cualquier REQ del listado para ver aquí su Pregunta / Requerimiento.</div>
+      </div>
+    </div>
+    <div class="el-stats">
+      <div class="stat tot"><div class="l"><span class="sec-ico">${IC_STATS}</span>Requisitos a evaluar</div><div class="n">${r.total}</div></div>
+      <div class="req-block">
+        <div class="req-head"><span><span class="sec-ico">${IC_CHECK}</span><span class="rh-txt">Requerimientos cubiertos · <strong>${esc(r.item)} REQ 1–${r.total}</strong></span></span>
+          <span class="req-count ok" data-item="${esc(r.item)}"><b>${c0}</b> / ${r.total} marcados</span></div>
+        <div class="ec-bar req-bar"><div class="ec-bar-fill ${semClass(r.total?c0/r.total*100:0)}" data-item="${esc(r.item)}" style="width:${r.total?c0/r.total*100:0}%"></div></div>
+        <div class="req-chips">${chips}</div>
+      </div>
+    </div>
+  </div>
+</section>`});
+});
+
+// DETAIL TABLE
+slides.push({nav:'Detalle de requerimientos', html:`
+<section class="slide" id="s-tbl" data-noscroll>
+  <div class="s-head">
+    <button class="back-btn" data-goto="1">‹ Requisitos por elemento</button>
+    <span class="kicker">Trazabilidad · Detalle</span>
+    <h2>Detalle de requerimientos funcionales</h2>
+  </div>
+  <div class="tbl-tools">
+    <input id="q" placeholder="Buscar por requerimiento, ítem o REQ…" />
+    <select id="fEl"><option value="">Todos los elementos</option>${R.map(r=>`<option value="${esc(r.elemento)}">${esc(r.item)} · ${esc(r.elemento)}</option>`).join('')}</select>
+    <span class="count" id="tblCount"></span>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th style="width:90px">Ítem+REQ</th><th>Pregunta / Requerimiento</th><th style="width:220px">Elemento</th></tr></thead>
+      <tbody id="tblBody"></tbody>
+    </table>
+  </div>
+</section>`});
+
+/* ---------- RENDER ---------- */
+const deck = document.getElementById('deck');
+deck.innerHTML = slides.map(s=>s.html).join('');
+const sl = [...deck.querySelectorAll('.slide')];
+let cur = 0;
+
+// dots + sidebar
+const dots = document.getElementById('dots');
+dots.innerHTML = sl.map((_,i)=>`<span class="d" data-i="${i}"></span>`).join('');
+const sbList = document.getElementById('sbList');
+sbList.innerHTML = slides.map((s,i)=>`<a data-i="${i}"><span class="ix">${String(i+1).padStart(2,'0')}</span><span>${esc(s.nav)}</span></a>`).join('');
+
+function go(i){
+  i=Math.max(0,Math.min(sl.length-1,i));
+  sl[cur].classList.remove('active');
+  cur=i;
+  sl[cur].classList.add('active');
+  sl[cur].scrollTop=0;
+  document.getElementById('counter').textContent=`${i+1} / ${sl.length}`;
+  document.getElementById('progress').style.width=((i+1)/sl.length*100)+'%';
+  [...dots.children].forEach((d,k)=>d.classList.toggle('active',k===i));
+  [...sbList.children].forEach((a,k)=>a.classList.toggle('active',k===i));
+  // keep active dot visible
+  const ad=dots.children[i]; if(ad) ad.scrollIntoView({block:'nearest',inline:'nearest'});
+  const aa=sbList.children[i]; if(aa) aa.scrollIntoView({block:'nearest'});
+  document.getElementById('prev').disabled=(i===0);
+  document.getElementById('next').disabled=(i===sl.length-1);
+  onEnter(i);
+}
+
+// animations on enter
+let kpiDone=false;
+function onEnter(i){
+  const el=sl[i];
+  if(el.id==='s-cover' && !kpiDone){kpiDone=true;
+    el.querySelectorAll('[data-count]').forEach(n=>animCount(n,+n.dataset.count));}
+  if(el.id==='s-bars'){R.forEach(r=>refreshItem(r.item));refreshGlobal();}
+}
+function animCount(node,to){
+  const dur=900,t0=performance.now();
+  function tick(t){const p=Math.min(1,(t-t0)/dur);const e=1-Math.pow(1-p,3);
+    node.textContent=Math.round(to*e);if(p<1)requestAnimationFrame(tick);}
+  requestAnimationFrame(tick);
+}
+
+document.getElementById('prev').onclick=()=>go(cur-1);
+document.getElementById('next').onclick=()=>go(cur+1);
+dots.onclick=e=>{const d=e.target.closest('.d');if(d)go(+d.dataset.i);};
+sbList.onclick=e=>{const a=e.target.closest('a');if(a){go(+a.dataset.i);closeSb();}};
+deck.addEventListener('click',e=>{const b=e.target.closest('[data-goto]');if(b)go(+b.dataset.goto);});
+
+// actualiza contador del elemento + barra de la card del panorama
+function refreshItem(item){
+  const t=totalOf(item), c=countChecked(item), pct=t?c/t*100:0;
+  document.querySelectorAll(`.req-count[data-item="${item}"]`).forEach(el=>el.innerHTML=`<b>${c}</b> / ${t} marcados`);
+  document.querySelectorAll(`.ec-prog[data-item="${item}"]`).forEach(el=>el.innerHTML=`<b>${c}</b> de ${t} requisitos revisados`);
+  document.querySelectorAll(`.ec-bar-fill[data-item="${item}"]`).forEach(el=>{el.style.width=pct+'%';applySem(el,pct);});
+  refreshGlobal();
+}
+// barra de progreso global (todos los ítems)
+function refreshGlobal(){
+  const done=DET.filter(d=>checks[d.itemReq]).length, pct=TOTAL?done/TOTAL*100:0;
+  const f=document.getElementById('gpFill'); if(f){f.style.width=pct+'%';applySem(f,pct);}
+  const d=document.getElementById('gpDone'); if(d) d.textContent=done;
+  const p=document.getElementById('gpPct'); if(p) p.textContent=Math.round(pct)+'%';
+}
+
+// REQ chip: checkbox marca/desmarca · etiqueta muestra la Pregunta / Requerimiento
+deck.addEventListener('click',e=>{
+  const chip=e.target.closest('.req'); if(!chip) return;
+  const slide=chip.closest('.slide');
+  const req=chip.dataset.req;
+
+  // clic en el checkbox → marcar / desmarcar
+  if(e.target.closest('.req-check')){
+    if(checks[req]) delete checks[req]; else checks[req]=true;
+    saveChecks();
+    chip.classList.toggle('checked', !!checks[req]);
+    refreshItem(chip.dataset.item);
+    return;
+  }
+
+  // clic en la etiqueta → mostrar la pregunta Y marcar el checkbox automáticamente
+  slide.querySelectorAll('.req').forEach(c=>c.classList.remove('active'));
+  chip.classList.add('active');
+  if(!checks[req]){
+    checks[req]=true; saveChecks();
+    chip.classList.add('checked');
+    refreshItem(chip.dataset.item);
+  }
+  const d=DET.find(x=>String(x.item)===chip.dataset.item && String(x.n)===chip.dataset.n);
+  const panel=slide.querySelector('.req-detail'); if(!panel||!d) return;
+  panel.querySelector('.rd-head').innerHTML=`<span class="rd-id">${esc(d.itemReq)}</span>`;
+  const q=panel.querySelector('.rd-q');
+  q.classList.remove('rd-empty');
+  q.innerHTML=esc(d.pregunta);
+});
+
+// keyboard
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT'){if(e.key==='Escape')e.target.blur();return;}
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' ')(e.preventDefault(),go(cur+1));
+  else if(e.key==='ArrowLeft'||e.key==='PageUp')(e.preventDefault(),go(cur-1));
+  else if(e.key==='Home')go(0); else if(e.key==='End')go(sl.length-1);
+  else if(e.key.toLowerCase()==='m')toggleSb();
+  else if(e.key.toLowerCase()==='t')toggleTheme();
+  else if(e.key==='Escape')closeSb();
+});
+// sidebar
+const sb=document.getElementById('sidebar');
+function toggleSb(){sb.classList.toggle('open');}
+function closeSb(){sb.classList.remove('open');}
+document.getElementById('menuBtn').onclick=toggleSb;
+
+// touch swipe
+let tx=0;
+deck.addEventListener('touchstart',e=>tx=e.changedTouches[0].clientX,{passive:true});
+deck.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-tx;
+  if(Math.abs(dx)>60)go(cur+(dx<0?1:-1));},{passive:true});
+
+/* ---------- DETAIL TABLE ---------- */
+function renderTbl(){
+  const q=(document.getElementById('q').value||'').toLowerCase();
+  const fe=document.getElementById('fEl').value;
+  const rows=DET.filter(d=>{
+    if(fe&&d.elemento!==fe)return false;
+    if(q&&!(`${d.itemReq} ${d.pregunta} ${d.elemento} ${d.obs}`.toLowerCase().includes(q)))return false;
+    return true;
+  });
+  document.getElementById('tblCount').textContent=`${rows.length} de ${DET.length} requisitos`;
+  document.getElementById('tblBody').innerHTML=rows.map(d=>{
+    return `<tr>
+      <td class="id">${esc(d.itemReq)}</td>
+      <td>${esc(d.pregunta)}</td>
+      <td class="el">${esc(d.elemento)}</td>
+    </tr>`;
+  }).join('')||`<tr><td colspan="3" style="padding:30px;text-align:center;color:var(--mut2)">Sin resultados para los filtros aplicados.</td></tr>`;
+}
+['q','fEl'].forEach(id=>{const el=document.getElementById(id);el&&el.addEventListener('input',renderTbl);});
+renderTbl();
+
+/* ---------- TEMA CLARO / OSCURO ---------- */
+const THEME_KEY='sgdea_theme';
+// logos según tema: claro usa versiones a color (las blancas no se ven sobre fondo claro)
+const LOGOS={
+  dark:['Logo%20Banco%20Agrario%20blanco.png','linktic.svg'],
+  light:['Logo%20Banco%20Agrario-horizontal.svg','logolinktic.svg']
+};
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme',t);
+  try{localStorage.setItem(THEME_KEY,t);}catch(e){}
+  const imgs=document.querySelectorAll('#s-cover .cover-logos img');
+  if(imgs[0]) imgs[0].src=LOGOS[t][0];
+  if(imgs[1]) imgs[1].src=LOGOS[t][1];
+  const b=document.getElementById('themeBtn');
+  if(b) b.title=(t==='light'?'Cambiar a modo oscuro (T)':'Cambiar a modo claro (T)');
+}
+function toggleTheme(){
+  const cur=document.documentElement.getAttribute('data-theme')==='light'?'light':'dark';
+  applyTheme(cur==='light'?'dark':'light');
+}
+applyTheme(document.documentElement.getAttribute('data-theme')==='light'?'light':'dark');
+document.getElementById('themeBtn').onclick=toggleTheme;
+
+go(0);
+</script>
+</body>
+</html>
