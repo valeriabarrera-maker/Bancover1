@@ -553,9 +553,27 @@ const applySem = (el,pct) => {if(!el)return;el.classList.remove('sem-low','sem-m
 
 /* ---------- ESTADO DE CHECKS (persistente) ---------- */
 const CHECK_KEY='sgdea_req_checks';
+const CHECK_API='/api/checks';
 let checks={};
 try{checks=JSON.parse(localStorage.getItem(CHECK_KEY)||'{}')||{};}catch(e){checks={};}
 const saveChecks=()=>{try{localStorage.setItem(CHECK_KEY,JSON.stringify(checks));}catch(e){}};
+// envía un cambio al estado compartido (otros dispositivos lo verán)
+const pushCheck=(id,value)=>{fetch(CHECK_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,value})}).catch(()=>{});};
+// aplica el objeto checks actual a todos los chips + barras de progreso
+function applyChecksToUI(){
+  document.querySelectorAll('.req').forEach(chip=>chip.classList.toggle('checked',!!checks[chip.dataset.req]));
+  if(typeof R!=='undefined'&&typeof refreshItem==='function'){R.forEach(r=>refreshItem(r.item));}
+  if(typeof refreshGlobal==='function') refreshGlobal();
+}
+// trae el estado compartido del servidor y lo aplica
+async function pullChecks(){
+  try{
+    const r=await fetch(CHECK_API,{cache:'no-store'});
+    if(!r.ok) return;
+    const data=await r.json();
+    if(data&&data.checks){checks=data.checks;saveChecks();applyChecksToUI();}
+  }catch(e){}
+}
 const totalOf=item=>DET.filter(d=>d.item===item).length;
 const countChecked=item=>DET.filter(d=>d.item===item&&checks[d.itemReq]).length;
 
@@ -740,8 +758,9 @@ deck.addEventListener('click',e=>{
 
   // clic en el checkbox → marcar / desmarcar
   if(e.target.closest('.req-check')){
-    if(checks[req]) delete checks[req]; else checks[req]=true;
-    saveChecks();
+    const v=!checks[req];
+    if(v) checks[req]=true; else delete checks[req];
+    saveChecks(); pushCheck(req,v);
     chip.classList.toggle('checked', !!checks[req]);
     refreshItem(chip.dataset.item);
     return;
@@ -751,7 +770,7 @@ deck.addEventListener('click',e=>{
   slide.querySelectorAll('.req').forEach(c=>c.classList.remove('active'));
   chip.classList.add('active');
   if(!checks[req]){
-    checks[req]=true; saveChecks();
+    checks[req]=true; saveChecks(); pushCheck(req,true);
     chip.classList.add('checked');
     refreshItem(chip.dataset.item);
   }
@@ -830,6 +849,10 @@ applyTheme(document.documentElement.getAttribute('data-theme')==='light'?'light'
 document.getElementById('themeBtn').onclick=toggleTheme;
 
 go(0);
+
+// estado compartido entre dispositivos: carga inicial + refresco periódico
+pullChecks();
+setInterval(pullChecks, 5000);
 </script>
 </body>
 </html>
